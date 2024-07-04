@@ -1,0 +1,57 @@
+/* src/App.css */
+.App {
+  text-align: center;
+  padding: 20px;
+}
+
+input[type="file"], input[type="text"] {
+  margin: 10px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+table {
+  margin: 20px auto;
+  border-collapse: collapse;
+  width: 80%;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #220f79;
+  color: white;
+}
+
+.Titre{
+  color: blue;
+
+}
+.group{
+  display: flex;
+  flex-direction: column;
+  align-content: space-evenly;
+  background-color: rgba(54, 67, 190,0.2);
+  width: 500px;
+  border-radius: 15px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.inp{
+  width: 200px;
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+.intit{
+  color:#260f79;
+  font-size: 20px;
+}
