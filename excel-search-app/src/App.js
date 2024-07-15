@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+
+import FileUploader from './fileUploader';
+import SearchBar from './searchBar';
+import NumericFilter from './numericFilter';
+import ColumnSelector from './columnSelector';
+import SearchResults from './searchResult';
+import DownloadButtons from './downloadbuttons';
 
 function App() {
   const [data, setData] = useState([]);
@@ -12,8 +22,7 @@ function App() {
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     const reader = new FileReader();
-    
-    
+
     reader.onload = (e) => {
       const binaryStr = e.target.result;
       try {
@@ -22,12 +31,12 @@ function App() {
         const sheet = workbook.Sheets[sheetName];
 
         if (!sheet) {
-          throw new Error('No sheet found');
+          throw new Error('Aucune feuille de calcul trouvée');
         }
 
         const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
         if (jsonData.length === 0) {
-          throw new Error('Sheet is empty');
+          throw new Error('Votre fichier excel est vide');
         }
 
         const headers = jsonData[0];
@@ -103,77 +112,75 @@ function App() {
     }));
   };
 
+  const handleDownloadExcel = () => {
+    if (filteredData.length === 0) {
+      alert('Aucune données à télécharger');
+      return;
+    }
+
+    const workbook = XLSX.utils.book_new();
+    const sheetData = filteredData.map(row => Object.values(row));
+    const worksheet = XLSX.utils.aoa_to_sheet([Object.keys(filteredData[0]), ...sheetData]);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Filtered Data');
+    XLSX.writeFile(workbook, 'Facture.xlsx');
+  };
+
+  const handleDownloadPDF = () => {
+    if (filteredData.length === 0) {
+      alert('Aucune données à télécharger');
+      return;
+    }
+
+    const input = document.getElementById('invoice');
+    html2canvas(input).then((canvas) => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF();
+      pdf.addImage(imgData, 'PNG', 0, 0);
+      pdf.save('Facture.pdf');
+    });
+  };
+
+  const handleDownloadWord = async () => {
+    if (filteredData.length === 0) {
+      alert('Aucune données à télécharger');
+      return;
+    }
+
+    const doc = new Document();
+    const tableRows = filteredData.map(row => {
+      return Object.values(row).map(cell => new Paragraph(cell.toString()));
+    });
+
+    doc.addSection({
+      children: [
+        new Paragraph({
+          children: [new TextRun("Facture")]
+        }),
+        ...tableRows
+      ]
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Facture.docx';
+    link.click();
+  };
+
   useEffect(() => {
     handleSearch();
   }, [query, minValue, maxValue, includedColumns]);
 
   return (
     <div className="App">
-      <h1 className='Titre'>Recherche dans le Fichier Excel</h1>
-      <input type="file" onChange={handleFileUpload} accept=".xls,.xlsx"/>
-      <input
-        type="text"
-        value={query}
-        onChange={handleQueryChange}
-        placeholder="Recherche textuelle ..."
-      />
-
-      <div className='group'>
-        <h5 className='intit'> Recherche en valeure numérique</h5>
-        <label>Entrez la valeure minimale ici</label>
-        <input type="number" className='inp' value={minValue} onChange={(e) => setMinValue(e.target.value)} />
-
-        <label>Entrez la valeure maximale ici</label>
-        <input type="number" className='inp' value={maxValue} onChange={(e) => setMaxValue(e.target.value)} />
-      </div>
-
-      <div>
-        <h2>Colonnes à inclure dans la recherche</h2>
-        {Object.keys(includedColumns).map((key) => (
-          <label key={key}>
-            <input
-              type="checkbox"
-              name={key}
-              checked={includedColumns[key]}
-              onChange={handleColumnChange}
-            />
-            {key}
-          </label>
-        ))}
-      </div>
-
-      <div>
-        <h2>Résultats de la Recherche</h2>
-        <table>
-          <thead>
-            <tr>
-              {filteredData.length > 0 &&
-                Object.keys(filteredData[0]).map((key) => (
-                  <th key={key}>
-                    {key}
-                    <input
-                      type="checkbox"
-                      name={key}
-                      checked={includedColumns[key]}
-                      onChange={handleColumnChange}
-                      style={{ marginLeft: '5px' }}
-                    />
-                  </th>
-                ))
-              }
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map((row, index) => (
-              <tr key={index}>
-                {Object.entries(row).map(([key, value]) => (
-                  <td key={key}>{value}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <FileUploader handleFileUpload={handleFileUpload} />
+      <SearchBar query={query} handleQueryChange={handleQueryChange} />
+      <NumericFilter minValue={minValue} maxValue={maxValue} setMinValue={setMinValue} setMaxValue={setMaxValue} />
+      <ColumnSelector includedColumns={includedColumns} handleColumnChange={handleColumnChange} />
+      <SearchResults filteredData={filteredData} includedColumns={includedColumns} handleColumnChange={handleColumnChange} />
+      <DownloadButtons handleDownloadExcel={handleDownloadExcel} handleDownloadPDF={handleDownloadPDF} handleDownloadWord={handleDownloadWord} />
     </div>
   );
 }
