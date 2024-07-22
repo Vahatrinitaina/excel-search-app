@@ -1,7 +1,6 @@
-
 import React from 'react';
 
-const DownloadButtons = ({ handleDownloadExcel, handleDownloadPDF, handleDownloadWord }) => (
+const DownloadButtons = ({ handleDownloadExcel, handleDownloadPDF, handleDownloadWord, handleInvoiceTemplateUpload }) => (
   <div>
     <button className="Btn" onClick={handleDownloadExcel}>
       <div className="sign">
@@ -11,6 +10,16 @@ const DownloadButtons = ({ handleDownloadExcel, handleDownloadPDF, handleDownloa
       </div>
       <div className="text">Télécharger</div>
     </button>
+
+    <label className="Btna">
+      Sélectionner le modèle de facture
+      <input
+        type="file"
+        accept=".xlsx"
+        style={{ display: 'none' }}
+        onChange={handleInvoiceTemplateUpload}
+      />
+    </label>
 
     {/*<button className="Btn" onClick={handleDownloadPDF}>
       Télécharger PDF
